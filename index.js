@@ -32,6 +32,7 @@ async function fetchStandingsHtml(leagueSlug, tournamentSlug, stageSlug) {
   const url = `https://lolesports.com/standings/${leagueSlug}/${tournamentSlug}/${stageSlug}`;
   console.log(url);
   const browser = await puppeteer.launch({
+    headless: true,
     args: ["--no-sandbox", "--disable-setuid-sandbox"],
   });
   const page = await browser.newPage();
