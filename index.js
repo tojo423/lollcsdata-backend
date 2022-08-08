@@ -88,8 +88,8 @@ app.get("/standingsHtml", async (req, res) => {
       cacheObj.time = Date.now();
       res.send(fetchedHtml);
     }
-  } catch {
-    res.send(`<h5>Error</h5>`);
+  } catch (err) {
+    res.send(`<div>${err}</div>`);
   }
 });
 
