@@ -31,7 +31,9 @@ function getOrCreateCacheObj(leagueSlug, tournamentSlug, stageSlug) {
 async function fetchStandingsHtml(leagueSlug, tournamentSlug, stageSlug) {
   const url = `https://lolesports.com/standings/${leagueSlug}/${tournamentSlug}/${stageSlug}`;
   console.log(url);
-  const browser = await puppeteer.launch();
+  const browser = await puppeteer.launch({
+    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+  });
   const page = await browser.newPage();
   await page.goto(url);
   await delay();
@@ -48,18 +50,35 @@ async function fetchStandingsHtml(leagueSlug, tournamentSlug, stageSlug) {
 app.use(morgan("tiny"));
 app.use(cors());
 
+app.get("/", (req, res) => {
+  res.send("<h1>Working!</h1>");
+});
+
 app.get("/standingsHtml", async (req, res) => {
-  const { leagueSlug, tournamentSlug, stageSlug } = req.query;
-  console.log("tournamentSlug:", tournamentSlug, "stageSlug:", stageSlug);
+  try {
+    const { leagueSlug, tournamentSlug, stageSlug } = req.query;
+    console.log("tournamentSlug:", tournamentSlug, "stageSlug:", stageSlug);
 
-  const cacheObj = getOrCreateCacheObj(tournamentSlug, stageSlug);
+    const cacheObj = getOrCreateCacheObj(tournamentSlug, stageSlug);
 
-  if (cacheObj.html) {
-    const elapsedTime = Date.now() - cacheObj.time;
-    const minutes = 60;
-    const seconds = minutes * 60;
-    const ms = seconds * 1000;
-    if (elapsedTime > ms) {
+    if (cacheObj.html) {
+      const elapsedTime = Date.now() - cacheObj.time;
+      const minutes = 60;
+      const seconds = minutes * 60;
+      const ms = seconds * 1000;
+      if (elapsedTime > ms) {
+        const fetchedHtml = await fetchStandingsHtml(
+          leagueSlug,
+          tournamentSlug,
+          stageSlug
+        );
+        cacheObj.html = fetchedHtml;
+        cacheObj.time = Date.now();
+        res.send(fetchedHtml);
+      } else {
+        res.send(cacheObj.html);
+      }
+    } else {
       const fetchedHtml = await fetchStandingsHtml(
         leagueSlug,
         tournamentSlug,
@@ -68,18 +87,9 @@ app.get("/standingsHtml", async (req, res) => {
       cacheObj.html = fetchedHtml;
       cacheObj.time = Date.now();
       res.send(fetchedHtml);
-    } else {
-      res.send(cacheObj.html);
     }
-  } else {
-    const fetchedHtml = await fetchStandingsHtml(
-      leagueSlug,
-      tournamentSlug,
-      stageSlug
-    );
-    cacheObj.html = fetchedHtml;
-    cacheObj.time = Date.now();
-    res.send(fetchedHtml);
+  } catch {
+    res.send(`<h5>Error</h5>`);
   }
 });
 
