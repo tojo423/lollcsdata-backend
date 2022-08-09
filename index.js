@@ -64,7 +64,8 @@ app.get("/standingsHtml", async (req, res) => {
 
     if (cacheObj.html) {
       const elapsedTime = Date.now() - cacheObj.time;
-      const minutes = 60;
+      const hours = 6;
+      const minutes = hours * 60;
       const seconds = minutes * 60;
       const ms = seconds * 1000;
       if (elapsedTime > ms) {
